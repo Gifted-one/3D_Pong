@@ -11,6 +11,7 @@ public class Player_controller : MonoBehaviour
 
     public GameObject racket;
     public GameObject ball;
+    public GameObject prompt;
 
     int Speed = 10;
     int MouseSpeed = 4;
@@ -24,6 +25,8 @@ public class Player_controller : MonoBehaviour
     float LowerLimit;
 
     public Racket_Script Notifier;
+    public PlayerPrompt Prompt;
+
     
     
 
@@ -33,6 +36,7 @@ public class Player_controller : MonoBehaviour
         Racket = racket.GetComponent<Rigidbody>();
         Notifier = racket.GetComponent<Racket_Script>();
         Ball = ball.GetComponent<Rigidbody>();
+        Prompt = prompt.GetComponent<PlayerPrompt>();
 
 
         TempVector.x = 90;
@@ -43,52 +47,35 @@ public class Player_controller : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        Camera.main.transform.localRotation = Quaternion.Euler(-TempVector.y, TempVector.x, 0);
 
-        //Attempt 1 at making the racket move using the mouse
-        /*
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if(Physics.Raycast(ray, out RaycastHit hit) )
-        {
-            TempVector = hit.point;
-        }
-        Debug.Log(TempVector);
-        GetMouseP = new Vector3(Camera.main.transform.position.x, TempVector.y, TempVector.z);
-        
-        MoveRacket = Vector3.Lerp(Racket.position, GetMouseP, 0.5f);
-        */
-        //Did not work
-
-
-
-        //Attempt 2 at making the racket move using the mouse
-        //Reusing code I wrote for a previous project (:
-        //For Up and down movement
-        if (TempVector.y < 70 && TempVector.y > LowerLimit)
+        if (TempVector.y < 70 && TempVector.y > LowerLimit && Prompt.countdown >= 1)
         {
             TempVector.y += Input.GetAxis("Mouse Y") * MouseSpeed;
         }
-        else if(TempVector.y > 70)
+        else if(TempVector.y > 70 && Prompt.countdown >= 1)
         {
             TempVector.y -= 0.1f;
         }
-        else
+        else if(Prompt.countdown >= 1)
         {
             TempVector.y += 0.1f;
         }
         //For Left and Right movement
-        if (TempVector.x < 120 && TempVector.x > 60)
+        if (TempVector.x < 120 && TempVector.x > 60 && Prompt.countdown >= 1)
         {
             TempVector.x += Input.GetAxis("Mouse X") * MouseSpeed;
         }
-        else if (TempVector.x > 120)
+        else if (TempVector.x > 120 && Prompt.countdown >= 1)
         {
             TempVector.x -= 0.1f;
         }
-        else
+        else if(Prompt.countdown >= 1)
         {
             TempVector.x += 0.1f;
         }
 
+        
         //Hide cursor with H key on the keyboard
         if (Input.GetKeyDown(KeyCode.H))
         {
@@ -120,30 +107,6 @@ public class Player_controller : MonoBehaviour
             MoveRacket = Camera.main.transform.position - GetMouseP;
             Racket.MovePosition(MoveRacket);
         }
-
-        //Look = Ball.position - Racket.position;
-        //Quaternion target = Quaternion.LookRotation(Look);
-        //Racket.rotation = target;
-
-
-
-
-
-
-
-    }
-
-    private void FixedUpdate()
-    {
-        //Part of attempt 1
-        //player.velocity = new Vector3(Input.GetAxisRaw("Vertical") * Speed, 0, Input.GetAxisRaw("Horizontal") * Speed * -1);
-        //Racket.MovePosition(MoveRacket);
-
-        //Part of attempt 2
-
-        Camera.main.transform.localRotation = Quaternion.Euler(-TempVector.y, TempVector.x, 0);
-
-
 
 
     }
