@@ -22,4 +22,10 @@ public class AI_racket : MonoBehaviour
         
     }
 
+    public void MoveRacket(Vector3 pos)
+    {
+        Racket.MovePosition(pos);
+        
+    }
+
 }

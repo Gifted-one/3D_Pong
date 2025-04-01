@@ -4,7 +4,8 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - racket
+  - racket_P
+  - racket_AI
   layers:
   - Default
   - TransparentFX
