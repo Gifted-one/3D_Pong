@@ -18,6 +18,9 @@ public class Ball_movement : MonoBehaviour
 
     public AI_racket AI;
     public PlayerPrompt Prompt;
+
+    public AudioSource Sound;
+    public AudioClip SoundClip;
     // Start is called before the first frame update
     void Start()
     {
@@ -28,7 +31,7 @@ public class Ball_movement : MonoBehaviour
         Prompt = prompt.GetComponent<PlayerPrompt>();
         
 
-        
+
     }
 
     // Update is called once per frame
@@ -87,6 +90,8 @@ public class Ball_movement : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        Sound.clip = SoundClip;
+        Sound.Play();
         if (collision.transform.tag == "racket_P")
         {
 

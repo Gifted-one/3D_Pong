@@ -83,6 +83,11 @@ public class Player_controller : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
         }
 
+        if(Input.GetKeyDown(KeyCode.Escape))
+        {
+            Cursor.lockState = CursorLockMode.None;
+        }
+
 
 
         if (Scroll_Legnth < 7)
