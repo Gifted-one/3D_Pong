@@ -17,11 +17,11 @@ public class PlayerPrompt : MonoBehaviour
     float Timer = 0;
 
     public int countdown;
-    int TimeToStart = 30;
+    int TimeToStart = 5; //Make 30 for on screen text
     int TimetoDisplay = 0;
     int inc = 0;
 
-    bool ShouldFollow;
+    public bool ShouldFollow;
     bool textDelay;
 
     public GameObject centreText;
@@ -74,7 +74,7 @@ public class PlayerPrompt : MonoBehaviour
 
         if (TimeToStart > 0)
         {
-            TimeToStart = 30;
+            TimeToStart = 5; //Make 30 for on screen text
             TimeToStart -= countdown;
             Centre_text.text = TimeToStart.ToString();
 
@@ -83,7 +83,7 @@ public class PlayerPrompt : MonoBehaviour
         {
             Centre_text.gameObject.SetActive(false);
             Ball.KickOff();
-            ShouldFollow = false;
+            //ShouldFollow = false;
         }
 
         //Delay funtion, If needed.
@@ -124,6 +124,10 @@ public class PlayerPrompt : MonoBehaviour
 
     void tutorial_text()
     {
+        /*
+         * 
+         * 
+         * Must reactivate for on screen text
         if (inc == 1)
         {
             Tutorial_text.gameObject.SetActive(true);
@@ -150,6 +154,7 @@ public class PlayerPrompt : MonoBehaviour
             Tutorial_text.gameObject.SetActive(false);
         }
         inc++;
+        */
     }
 
     public void Quit()
