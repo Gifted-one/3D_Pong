@@ -15,17 +15,19 @@ public class PlayerPrompt : MonoBehaviour
     public TextMeshProUGUI You_lostText;
     public TextMeshProUGUI specialAbilities;
     public TextMeshProUGUI ScoreText;
+    public TextMeshProUGUI LevelText;
 
     float Delay;
-    float Timer = 0;
+    public static float Timer = 0;
     float AbilitiesDelay = 0;
-    float TimeToStart2 = 0;
 
     public int countdown;
-    int TimeToStart = 5; //Make 30 for on screen text
+    public int TimeToStart; //Make 30 for on screen text
     int TimetoDisplay = 0;
     int inc = 0;
-    int score;
+    static int Level = 1;
+    static int score;
+    public int Holder;
 
 
     public bool ShouldFollow;
@@ -33,7 +35,10 @@ public class PlayerPrompt : MonoBehaviour
     bool textDelay;
     bool applyAbility;
     bool applyDelay;
+    bool incScore = true;
     public bool ShouldKick;
+    public bool starting;
+    //static bool restastin;
 
     public GameObject centreText;
     public GameObject ball;
@@ -45,7 +50,7 @@ public class PlayerPrompt : MonoBehaviour
 
     public List<string> Abilities = new List<string>();
 
-    string dir;
+    public static string dir;
 
 
     // Start is called before the first frame update
@@ -67,10 +72,11 @@ public class PlayerPrompt : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {
-        if(TimetoDisplay % 5 == 0 && textDelay)
+    {   
+
+        if(TimetoDisplay % 5 == 0 && textDelay && starting)
         {
-            //tutorial_text();
+            tutorial_text();
             Delay = 2;
             textDelay = false;
         }
@@ -86,7 +92,6 @@ public class PlayerPrompt : MonoBehaviour
 
         if (Abilities.Count > 0 && Input.GetMouseButtonDown(1) || applyAbility)
         {
-            Debug.Log("Called");
             applyAbility = true;
             if (Abilities.Count > 0 && Input.GetMouseButtonDown(1) && applyDelay)
             {
@@ -160,6 +165,43 @@ public class PlayerPrompt : MonoBehaviour
             }
         }
         ScoreText.text = score.ToString();
+        LevelText.text = Level.ToString();
+
+        if(score == 5 && incScore)
+        {
+            Level = 2;
+            incScore = false;
+        }
+        else if(score == 10 && incScore)
+        {
+            Level = 3;
+            incScore = false;
+        }
+        else if(score == 15 && incScore)
+        {
+            Level = 4;
+            incScore = false;
+        }
+        else if(score != 5 && score != 10 && score != 15)
+        {
+            incScore = true;
+        }
+
+        if(Level == 1)
+        {
+            Ball.Level_Speed = 5f;
+            Ball.changeSpeed(0.5f);
+        }
+        else if(Level == 2)
+        {
+            Ball.Level_Speed = 10f;
+            Ball.changeSpeed(0.7f);
+        }
+        else if(Level == 3)
+        {
+            Ball.Level_Speed = 15f;
+            Ball.changeSpeed(0.9f);
+        }
 
     }
     void FixedUpdate()
@@ -180,29 +222,21 @@ public class PlayerPrompt : MonoBehaviour
 
         if (TimeToStart > 0)
         {
-            TimeToStart = 5; //Make 30 for on screen text
+            if (starting)
+            {
+                TimeToStart = 30;
+                starting = true;
+            }
+            else if(!starting)
+            {
+                TimeToStart = Holder;
+            }
             TimeToStart -= countdown;
+            Centre_text.gameObject.SetActive(true);
             Centre_text.text = TimeToStart.ToString();
-
 
         }
         else if(TimeToStart == 0 && ShouldFollow)
-        {
-            Centre_text.gameObject.SetActive(false);
-            Ball.KickOff("player");
-        }
-
-        //For restarts
-        if (TimeToStart2 > 0)
-        {
-            TimeToStart2 -= Time.deltaTime;
-            Centre_text.gameObject.SetActive(true);
-            int temp = (int)TimeToStart2;
-            Centre_text.text = temp.ToString();
-
-
-        }
-        else if (TimeToStart2 <= 0 && ShouldFollow2)
         {
             Centre_text.gameObject.SetActive(false);
             Ball.KickOff(dir);
@@ -255,16 +289,20 @@ public class PlayerPrompt : MonoBehaviour
             {
                 score--;
             }
-            TimeToStart2 = 3;
+            Restart();
+            starting = false;
+            //TimeToStart = countdown + 5;
             dir = "player";
-            ShouldFollow2 = true;
+            //ShouldFollow2 = true;
         }
         else if (who == "Opponent")
         {
+            Restart();
             score++;
-            TimeToStart2 = 3;
+            starting = false;
+            //TimeToStart = countdown + 5;
             dir = "opponent";
-            ShouldFollow2 = true;
+            //ShouldFollow2 = true;
         }
     }
 

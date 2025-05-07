@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
-using static UnityEditor.PlayerSettings;
 
 public class AI_racket : MonoBehaviour
 {
@@ -13,6 +12,8 @@ public class AI_racket : MonoBehaviour
     Ball_movement Ball;
 
     public Vector3 position = Vector3.zero;
+
+    public float reactionSpeed = 0.5f;
 
     // Start is called before the first frame update
     void Start()
@@ -35,7 +36,7 @@ public class AI_racket : MonoBehaviour
     {
         //Racket.position = Vector3.Lerp(transform.position, pos, 0.5f);
 
-        Vector3 ToStart = Vector3.MoveTowards(transform.position, pos, 0.9f);
+        Vector3 ToStart = Vector3.MoveTowards(transform.position, pos, reactionSpeed);
         Racket.MovePosition(ToStart);
         position = pos;
 

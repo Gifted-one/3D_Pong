@@ -32,6 +32,7 @@ public class Ball_movement : MonoBehaviour
     //Sphere cast variables
     public float sphereRadius = 0.5f;
     public float castDistance = 1.5f;
+    public float Level_Speed = 1.0f;
 
     bool ShouldMove = true;
 
@@ -59,6 +60,19 @@ public class Ball_movement : MonoBehaviour
         line.startColor = Color.red;
         line.endColor = Color.red;
 
+        if(Point_int > 0)
+        {
+            Prompt.TimeToStart = (int)PlayerPrompt.Timer + 5;
+            Prompt.Holder = (int)PlayerPrompt.Timer + 5;
+            Prompt.starting = false;
+            
+        }
+        else
+        {
+            Prompt.TimeToStart = 30;
+            Prompt.starting = true;
+            PlayerPrompt.dir = "player";
+        }
 
 
 
@@ -70,18 +84,29 @@ public class Ball_movement : MonoBehaviour
         ToStart = P_racket.position - Ball.position;
         Y_pos = 4;
 
-        if(transform.position.x > 0)
+
+        if (transform.position.x > 0)
         {
-            if(CalculatePointOnY(Y_pos).x > 90)
+            Vector3 point = CalculatePointOnY(Y_pos);
+
+            if (point != Vector3.positiveInfinity && point.x > 90)
             {
-                while(CalculatePointOnY(Y_pos).x > 90)
+                int maxTries = 100; // prevent infinite loop
+                int tries = 0;
+
+                while (point.x > 90 && tries < maxTries)
                 {
                     Y_pos++;
+                    point = CalculatePointOnY(Y_pos);
+
+                    if (point == Vector3.positiveInfinity)
+                        break;
+
+                    tries++;
                 }
             }
+
             Vector3 pos = CalculatePointOnY(Y_pos) - transform.position;
-            Debug.DrawLine(transform.position, CalculatePointOnY(Y_pos), Color.red);
-            Debug.DrawRay(CalculatePointOnY(Y_pos), Vector3.up * 5f, Color.green);
             line.SetPosition(0, transform.position);
             line.SetPosition(1, CalculatePointOnY(Y_pos));
 
@@ -92,18 +117,18 @@ public class Ball_movement : MonoBehaviour
             }
         }
 
+
         if (transform.position.x < P_racket.transform.position.x - 5)
         {
+            //Ball.velocity = Vector3.zero;
+            //Ball.transform.position = middle;
             Prompt.scoreKeeper("Player");
-            Debug.Log(middle);
-            Ball.velocity = Vector3.zero;
-            Ball.angularVelocity = Vector3.zero;
-            Ball.transform.position = middle;
+
         }
         else if(transform.position.x > AI_racket_rb.transform.position.x + 5)
         {
             Prompt.scoreKeeper("Opponent");
-            Ball.MovePosition(middle);
+            //Ball.MovePosition(middle);
         }
 
         Vector3 direction = Ball.velocity.normalized;
@@ -116,7 +141,7 @@ public class Ball_movement : MonoBehaviour
                 Prompt.ShouldFollow2 = false;
                 Target = new Vector3(0, 4, 0) - p_racket.transform.position;
                 Target.y = 5;
-                Ball.velocity = Target.normalized * ballSpeed;
+                Ball.velocity = Target.normalized * (ballSpeed + Level_Speed);
                 ShouldMove = true;
                 Sound.clip = SoundClip;
                 Sound.Play();
@@ -126,8 +151,8 @@ public class Ball_movement : MonoBehaviour
                 Prompt.ShouldFollow = false;
                 Prompt.ShouldFollow2 = false;
                 Target = new Vector3(0, 4, 0) - AI_racket_rb.transform.position;
-                Target.y = 9;
-                Ball.velocity = Target.normalized * 70f;
+                Target.y = 5;
+                Ball.velocity = Target.normalized * (70f + Level_Speed);
                 Sound.clip = SoundClip;
                 Sound.Play();
             }
@@ -142,23 +167,11 @@ public class Ball_movement : MonoBehaviour
 
     }
 
-    void OnDrawGizmos()
-    {
-        Rigidbody tempRb = GetComponent<Rigidbody>();
-        if (tempRb != null)
-        {
-            Gizmos.color = Color.red;
-            Vector3 direction = tempRb.velocity.normalized;
-            Vector3 endPoint = transform.position + direction * castDistance;
 
-            Gizmos.DrawWireSphere(endPoint, sphereRadius);
-            Gizmos.DrawLine(transform.position, endPoint);
-        }
-
-    }
 
     public void KickOff(string dir)
     {
+
         if (dir == "player")
         {
             ToStart = P_racket.position - transform.position;
@@ -168,9 +181,9 @@ public class Ball_movement : MonoBehaviour
         }
         else
         {
-            ToStart = P_racket.position - transform.position;
+            ToStart = AI_racket_rb.transform.position - transform.position;
             Ball.velocity = ToStart.normalized;
-            ToStart = Vector3.Lerp(transform.position, P_racket.position, 0.1f);
+            ToStart = Vector3.Lerp(transform.position, AI_racket_rb.transform.position, 0.1f);
             Ball.MovePosition(ToStart);
         }
 
@@ -252,6 +265,11 @@ public class Ball_movement : MonoBehaviour
     public void freeze()
     {
         AI_racket_rb.position = Vector3.zero;
+    }
+
+    public void changeSpeed(float speed)
+    {
+        AI.reactionSpeed = speed;
     }
 
 }

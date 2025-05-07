@@ -10,10 +10,12 @@ public class Shop_Manager : MonoBehaviour
     public bool freeze;
 
     PlayerPrompt prompt;
+    //Ball_movement Ball;
 
     public GameObject Prompt;
     public GameObject Shop_panel;
     public GameObject Pause_Panel;
+    //public GameObject ball;
 
     // Start is called before the first frame update
     void Start()
@@ -22,10 +24,8 @@ public class Shop_Manager : MonoBehaviour
         reflect = false; 
         fire = false;
         freeze = false;
-
-        //Shop_panel.SetActive(false);
-
         prompt = Prompt.GetComponent<PlayerPrompt>();
+        //Ball = ball.GetComponent<Ball_movement>();
     }
 
     // Update is called once per frame
@@ -36,28 +36,32 @@ public class Shop_Manager : MonoBehaviour
 
     public void Manager(string Item)
     {
-        if(Item == "Time")
+        if(Item == "Time" && Ball_movement.Point_int > 10)
         {
             slow_time = true;
             prompt.Abilities.Add(Item);
+            Ball_movement.Point_int -= 10;
         }
 
-        if (Item == "Reflect")
+        if (Item == "Reflect" && Ball_movement.Point_int > 20)
         {
             reflect = true;
             prompt.Abilities.Add(Item);
+            Ball_movement.Point_int -= 20;
         }
 
-        if (Item == "Fire")
+        if (Item == "Fire" && Ball_movement.Point_int > 10)
         {
             fire = true;
             prompt.Abilities.Add(Item);
+            Ball_movement.Point_int -= 10;
         }
 
-        if (Item == "Freeze")
+        if (Item == "Freeze" && Ball_movement.Point_int > 20)
         {
             freeze = true;
             prompt.Abilities.Add(Item);
+            Ball_movement.Point_int -= 20;
         }
     }
     public void Hide()
