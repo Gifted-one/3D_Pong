@@ -13,13 +13,14 @@ public class Player_controller : MonoBehaviour
     public GameObject ball;
     public GameObject prompt;
 
-    int Speed = 10;
+    float Speed = 0.1f;
     int MouseSpeed = 4;
 
     Vector3 GetMouseP = Vector3.zero;
     Vector3 MoveRacket = Vector3.zero;
     Vector3 TempVector = Vector3.zero;
     Vector3 Look = Vector3.zero;
+    Vector3 Movement = Vector3.zero;
 
     float Scroll_Legnth;
     float LowerLimit;
@@ -42,6 +43,7 @@ public class Player_controller : MonoBehaviour
         TempVector.x = 90;
         Scroll_Legnth = 7;
         LowerLimit = -5;
+        Movement = transform.position;
     }
 
     // Update is called once per frame
@@ -75,7 +77,35 @@ public class Player_controller : MonoBehaviour
             TempVector.x += 0.1f;
         }
 
-        
+        if(Input.GetAxis("Horizontal") != 0 && Movement.z < 15 && Movement.z > -15)
+        {
+            Movement.z += Input.GetAxis("Horizontal") * -Speed;
+        }
+        else if (Movement.z >= 15)
+        {
+            Movement.z -= 0.2f;
+        }
+        else if (Movement.z < -15)
+        {
+            Movement.z += 0.2f;
+        }
+
+        if (Input.GetAxis("Vertical") != 0 && Movement.x > -65 && Movement.x < 5)
+        {
+            Movement.x += Input.GetAxis("Vertical") * Speed;
+            
+        }
+        else if(Movement.x >= 5)
+        {
+            Movement.x -= 0.2f;
+        }
+        else if(Movement.x < -65)
+        {
+            Movement.x += 0.2f;
+        }
+
+        transform.position = Movement;
+
         //Hide cursor with H key on the keyboard
         if (Input.GetKeyDown(KeyCode.H))
         {
@@ -102,7 +132,7 @@ public class Player_controller : MonoBehaviour
 
 
 
-        Scroll_Legnth += Input.GetAxis("Mouse ScrollWheel") * Speed;
+        Scroll_Legnth += Input.GetAxis("Mouse ScrollWheel") * 20;
         GetMouseP = Camera.main.transform.position - Racket.position;
 
         if (Scroll_Legnth != 0 && Scroll_Legnth > 7 && Scroll_Legnth < 16)

@@ -1,20 +1,27 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UIElements;
+using static UnityEngine.GraphicsBuffer;
 
 public class Ball_movement : MonoBehaviour
 {
-    Rigidbody Ball;
+    public Rigidbody Ball;
     Rigidbody P_racket;
     Rigidbody AI_racket_rb;
 
     public GameObject ai_racket;
     public GameObject p_racket;
     public GameObject prompt;
-    
+
+    public static int Point_int;
+    public int Y_pos;
+    public int ballSpeed = 70;
 
     public Vector3 ToStart = Vector3.zero;
     public Vector3 Target = Vector3.zero;
+    public Vector3 middle = new Vector3(0, 0, 0);
 
     public AI_racket AI;
     public PlayerPrompt Prompt;
@@ -24,9 +31,14 @@ public class Ball_movement : MonoBehaviour
 
     //Sphere cast variables
     public float sphereRadius = 0.5f;
-    public float castDistance = 1f;
+    public float castDistance = 1.5f;
 
     bool ShouldMove = true;
+
+    //Line renderer
+    private LineRenderer line;
+
+    public TextMeshProUGUI Points;
 
 
     // Start is called before the first frame update
@@ -38,7 +50,16 @@ public class Ball_movement : MonoBehaviour
         AI = ai_racket.GetComponent<AI_racket>();
         Prompt = prompt.GetComponent<PlayerPrompt>();
 
-        
+        //Line renderer
+        line = gameObject.AddComponent<LineRenderer>();
+        line.startWidth = 0.02f;
+        line.endWidth = 0.02f;
+        line.material = new Material(Shader.Find("Sprites/Default"));
+        line.positionCount = 2;
+        line.startColor = Color.red;
+        line.endColor = Color.red;
+
+
 
 
     }
@@ -47,59 +68,78 @@ public class Ball_movement : MonoBehaviour
     void Update()
     {
         ToStart = P_racket.position - Ball.position;
+        Y_pos = 4;
 
         if(transform.position.x > 0)
         {
-            Time.timeScale = 0.1f;
-
-            Vector3 pos = CalculatePointOnY() - transform.position;
-            Debug.DrawLine(transform.position, CalculatePointOnY(), Color.red);
-            Debug.DrawRay(CalculatePointOnY(), Vector3.up * 5f, Color.green);
-
-            
-            if (transform.position.x > 5 && CalculatePointOnY() != Vector3.positiveInfinity && ShouldMove)
+            if(CalculatePointOnY(Y_pos).x > 90)
             {
-                AI.MoveRacket(CalculatePointOnY());
+                while(CalculatePointOnY(Y_pos).x > 90)
+                {
+                    Y_pos++;
+                }
+            }
+            Vector3 pos = CalculatePointOnY(Y_pos) - transform.position;
+            Debug.DrawLine(transform.position, CalculatePointOnY(Y_pos), Color.red);
+            Debug.DrawRay(CalculatePointOnY(Y_pos), Vector3.up * 5f, Color.green);
+            line.SetPosition(0, transform.position);
+            line.SetPosition(1, CalculatePointOnY(Y_pos));
+
+            if (transform.position.x > 5 && CalculatePointOnY(Y_pos) != Vector3.positiveInfinity && ShouldMove)
+            {
+                AI.MoveRacket(CalculatePointOnY(Y_pos));
                 ShouldMove = false;
             }
         }
 
         if (transform.position.x < P_racket.transform.position.x - 5)
         {
-            Prompt.OutComeScreen("Player");
+            Prompt.scoreKeeper("Player");
+            Debug.Log(middle);
+            Ball.velocity = Vector3.zero;
+            Ball.angularVelocity = Vector3.zero;
+            Ball.transform.position = middle;
         }
-        else if(transform.position.x > AI_racket_rb.transform.position.x + 10)
+        else if(transform.position.x > AI_racket_rb.transform.position.x + 5)
         {
-            Prompt.OutComeScreen("Opponent");
-;
+            Prompt.scoreKeeper("Opponent");
+            Ball.MovePosition(middle);
         }
+
+        Vector3 direction = Ball.velocity.normalized;
+        if (Physics.SphereCast(transform.position, sphereRadius, direction, out RaycastHit hit, castDistance))
+        {
+            if (hit.transform.tag == "racket_P")
+            {
+                Point_int++;
+                Prompt.ShouldFollow = false;
+                Prompt.ShouldFollow2 = false;
+                Target = new Vector3(0, 4, 0) - p_racket.transform.position;
+                Target.y = 5;
+                Ball.velocity = Target.normalized * ballSpeed;
+                ShouldMove = true;
+                Sound.clip = SoundClip;
+                Sound.Play();
+            }
+            else if (hit.transform.tag == "racket_AI")
+            {
+                Prompt.ShouldFollow = false;
+                Prompt.ShouldFollow2 = false;
+                Target = new Vector3(0, 4, 0) - AI_racket_rb.transform.position;
+                Target.y = 9;
+                Ball.velocity = Target.normalized * 70f;
+                Sound.clip = SoundClip;
+                Sound.Play();
+            }
+        }
+
+        Points.text = Point_int.ToString();
 
     }
 
     private void FixedUpdate()
     {
-        Vector3 direction = Ball.velocity.normalized;
-        if(Physics.SphereCast(transform.position, sphereRadius, direction, out RaycastHit hit, castDistance))
-        {
-            if(hit.transform.tag == "racket_P")
-            {
-                //Debug.Log("SphereCast: " + hit.collider.name);
 
-                Prompt.ShouldFollow = false;
-                Target = new Vector3(0, 4, 0) - p_racket.transform.position;
-                Target.y = 5;
-                Ball.velocity = Target.normalized * 70f;
-                ShouldMove = true;
-            }
-            else if (hit.transform.tag == "racket_AI")
-            {
-                Target = new Vector3(0, 4, 0) - AI_racket_rb.transform.position;
-                Target.y = 7;
-                Ball.velocity = Target.normalized * 70f;
-                
-            }
-            
-        }
     }
 
     void OnDrawGizmos()
@@ -117,13 +157,23 @@ public class Ball_movement : MonoBehaviour
 
     }
 
-    public void KickOff()
+    public void KickOff(string dir)
     {
-        ToStart = P_racket.position - transform.position;
-        Ball.velocity = ToStart.normalized;
-        //Ball.AddForce(ToStart.normalized * 70f, ForceMode.VelocityChange);
-        ToStart = Vector3.Lerp(transform.position, P_racket.position, 0.1f);
-        Ball.MovePosition(ToStart);
+        if (dir == "player")
+        {
+            ToStart = P_racket.position - transform.position;
+            Ball.velocity = ToStart.normalized;
+            ToStart = Vector3.Lerp(transform.position, P_racket.position, 0.1f);
+            Ball.MovePosition(ToStart);
+        }
+        else
+        {
+            ToStart = P_racket.position - transform.position;
+            Ball.velocity = ToStart.normalized;
+            ToStart = Vector3.Lerp(transform.position, P_racket.position, 0.1f);
+            Ball.MovePosition(ToStart);
+        }
+
         
     }
 
@@ -140,7 +190,7 @@ public class Ball_movement : MonoBehaviour
         return reaction_plane;
     }
 
-    public Vector3 CalculatePointOnY()
+    public Vector3 CalculatePointOnY(int Y_pos)
     {
         float t = 0;
         float g = Physics.gravity.y;
@@ -148,7 +198,7 @@ public class Ball_movement : MonoBehaviour
         float Vin = Ball.velocity.y;
 
         Vector3 reaction_plane = Vector3.zero;
-        reaction_plane.y = 3;
+        reaction_plane.y = Y_pos;
 
         float a = 0.5f * g;
         float b = Vin;
@@ -169,15 +219,10 @@ public class Ball_movement : MonoBehaviour
         if (t < 0) t = Mathf.Max(t1, t2);
         if (t < 0) return Vector3.positiveInfinity;
 
-        reaction_plane.x = Ball.velocity.x/t + transform.position.x;
-        reaction_plane.z = Ball.velocity.z/t + transform.position.z;
+        Vector3 gravityVec = new Vector3(0, g, 0);
+        Vector3 predictedPosition = transform.position + Ball.velocity * t + 0.5f * gravityVec * t * t;
 
-        /*
-        reaction_plane.x = transform.position.x + Ball.velocity.x / Ball.velocity.y * (reaction_plane.y - transform.position.y);
-        reaction_plane.z = transform.position.z + Ball.velocity.z / Ball.velocity.y * (reaction_plane.y - transform.position.y);
-
-        */
-        return reaction_plane;
+        return predictedPosition;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -186,6 +231,27 @@ public class Ball_movement : MonoBehaviour
         Sound.clip = SoundClip;
         Sound.Play();
 
+    }
+
+    public void reflect()
+    { 
+        if(transform.position.x < p_racket.transform.position.x)
+        {
+            Point_int++;
+            Prompt.ShouldFollow = false;
+            Target = new Vector3(0, 4, 0) - transform.position;
+            Target.y = 5;
+            Ball.velocity = Target.normalized * ballSpeed;
+            ShouldMove = true;
+            Sound.clip = SoundClip;
+            Sound.Play();
+        }
+
+    }
+
+    public void freeze()
+    {
+        AI_racket_rb.position = Vector3.zero;
     }
 
 }

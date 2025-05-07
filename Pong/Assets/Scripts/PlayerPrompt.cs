@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using Unity.VisualScripting;
 
 
 public class PlayerPrompt : MonoBehaviour
@@ -12,25 +13,39 @@ public class PlayerPrompt : MonoBehaviour
     public TextMeshProUGUI Tutorial_text;
     public TextMeshProUGUI Time_text;
     public TextMeshProUGUI You_lostText;
+    public TextMeshProUGUI specialAbilities;
+    public TextMeshProUGUI ScoreText;
 
     float Delay;
     float Timer = 0;
+    float AbilitiesDelay = 0;
+    float TimeToStart2 = 0;
 
     public int countdown;
     int TimeToStart = 5; //Make 30 for on screen text
     int TimetoDisplay = 0;
     int inc = 0;
+    int score;
+
 
     public bool ShouldFollow;
+    public bool ShouldFollow2;
     bool textDelay;
+    bool applyAbility;
+    bool applyDelay;
+    public bool ShouldKick;
 
     public GameObject centreText;
     public GameObject ball;
     public GameObject Pause_Screen;
     public GameObject UnpauseButton;
+    public GameObject Shop_Panel;
 
     Ball_movement Ball;
-    public bool ShouldKick;
+
+    public List<string> Abilities = new List<string>();
+
+    string dir;
 
 
     // Start is called before the first frame update
@@ -38,10 +53,14 @@ public class PlayerPrompt : MonoBehaviour
     {
         Ball = ball.GetComponent<Ball_movement>();
         ShouldFollow = true;
+        ShouldFollow2 = false;
         ShouldKick = false;
         textDelay = true;
+        applyAbility = false;
+        applyDelay = true;
         Tutorial_text.gameObject.SetActive(false);
         Pause_Screen.SetActive(false);
+        Shop_Panel.SetActive(false);
         You_lostText.gameObject.SetActive(false);
 
     }
@@ -51,10 +70,97 @@ public class PlayerPrompt : MonoBehaviour
     {
         if(TimetoDisplay % 5 == 0 && textDelay)
         {
-            tutorial_text();
+            //tutorial_text();
             Delay = 2;
             textDelay = false;
         }
+
+        if(Abilities.Count > 0) 
+        {
+            specialAbilities.text = "You've got " + Abilities.Count + " special abilities, press right button mouse to use.";
+        }
+        else
+        {
+            specialAbilities.text = "You've got no special abilities.";
+        }
+
+        if (Abilities.Count > 0 && Input.GetMouseButtonDown(1) || applyAbility)
+        {
+            Debug.Log("Called");
+            applyAbility = true;
+            if (Abilities.Count > 0 && Input.GetMouseButtonDown(1) && applyDelay)
+            {
+                AbilitiesDelay = 5;
+                applyDelay = false;
+            }
+
+            if (Abilities[0] == "Time")
+            {
+                if (AbilitiesDelay > 0)
+                {
+                    Time.timeScale = 0.5f;
+                    AbilitiesDelay -= Time.deltaTime;
+
+                }
+                else
+                {
+                    Time.timeScale = 1f;
+                    applyDelay = true;
+                    applyAbility = false;
+                    Abilities.RemoveAt(0);
+                }
+            }
+            else if (Abilities[0] == "Fire")
+            {
+                if (AbilitiesDelay > 0)
+                {
+                    Ball.ballSpeed = 150;
+                    AbilitiesDelay -= Time.deltaTime;
+
+                }
+                else
+                {
+                    Ball.ballSpeed = 70;
+                    applyDelay = true;
+                    applyAbility = false;
+                    Abilities.RemoveAt(0);
+                }
+            }
+            else if (Abilities[0] == "Reflect")
+            {
+                if (AbilitiesDelay > 0)
+                {
+                    Ball.reflect();
+                    AbilitiesDelay -= Time.deltaTime;
+
+                }
+                else
+                {
+
+                    applyDelay = true;
+                    applyAbility = false;
+                    Abilities.RemoveAt(0);
+                }
+            }
+            else if (Abilities[0] == "Freeze")
+            {
+                if (AbilitiesDelay > 0)
+                {
+                    Ball.freeze();
+                    AbilitiesDelay -= Time.deltaTime;
+
+                }
+                else
+                {
+
+                    applyDelay = true;
+                    applyAbility = false;
+                    Abilities.RemoveAt(0);
+                }
+            }
+        }
+        ScoreText.text = score.ToString();
+
     }
     void FixedUpdate()
     {
@@ -78,16 +184,32 @@ public class PlayerPrompt : MonoBehaviour
             TimeToStart -= countdown;
             Centre_text.text = TimeToStart.ToString();
 
+
         }
         else if(TimeToStart == 0 && ShouldFollow)
         {
             Centre_text.gameObject.SetActive(false);
-            Ball.KickOff();
-            //ShouldFollow = false;
+            Ball.KickOff("player");
+        }
+
+        //For restarts
+        if (TimeToStart2 > 0)
+        {
+            TimeToStart2 -= Time.deltaTime;
+            Centre_text.gameObject.SetActive(true);
+            int temp = (int)TimeToStart2;
+            Centre_text.text = temp.ToString();
+
+
+        }
+        else if (TimeToStart2 <= 0 && ShouldFollow2)
+        {
+            Centre_text.gameObject.SetActive(false);
+            Ball.KickOff(dir);
         }
 
         //Delay funtion, If needed.
-        if(Delay > 0)
+        if (Delay > 0)
         {
             Delay -= Time.deltaTime;
 
@@ -96,6 +218,8 @@ public class PlayerPrompt : MonoBehaviour
         {
             textDelay = true;
         }
+
+ 
     }
 
     public void OutComeScreen(string who)
@@ -112,6 +236,7 @@ public class PlayerPrompt : MonoBehaviour
         }
         else if(who == "Opponent")
         {
+            score++;
             Centre_text.gameObject.SetActive(true);
             Centre_text.text = "You Win!";
             Pause();
@@ -122,12 +247,30 @@ public class PlayerPrompt : MonoBehaviour
 
     }
 
+    public void scoreKeeper(string who)
+    {
+        if (who == "Player")
+        {
+            if(score > 0)
+            {
+                score--;
+            }
+            TimeToStart2 = 3;
+            dir = "player";
+            ShouldFollow2 = true;
+        }
+        else if (who == "Opponent")
+        {
+            score++;
+            TimeToStart2 = 3;
+            dir = "opponent";
+            ShouldFollow2 = true;
+        }
+    }
+
     void tutorial_text()
     {
-        /*
-         * 
-         * 
-         * Must reactivate for on screen text
+
         if (inc == 1)
         {
             Tutorial_text.gameObject.SetActive(true);
@@ -135,7 +278,7 @@ public class PlayerPrompt : MonoBehaviour
         }
         else if (inc == 2)
         {
-            Tutorial_text.text = "Press H to hide the cursor.";
+            Tutorial_text.text = "Press H to hide the cursor and Escape to unhide it";
         }
         else if (inc == 3)
         {
@@ -154,7 +297,7 @@ public class PlayerPrompt : MonoBehaviour
             Tutorial_text.gameObject.SetActive(false);
         }
         inc++;
-        */
+
     }
 
     public void Quit()
@@ -164,9 +307,9 @@ public class PlayerPrompt : MonoBehaviour
 
     public void Restart()
     {
-        Time.timeScale = 1.0f;
         SceneManager.LoadScene("Main");
-        
+        Time.timeScale = 1.0f;
+
     }
 
     public void Pause()
@@ -182,5 +325,11 @@ public class PlayerPrompt : MonoBehaviour
         Time.timeScale = 1;
         Pause_Screen.SetActive(false);
         centreText.SetActive(true);
+    }
+
+    public void Shop()
+    {
+        Pause_Screen.SetActive(false);
+        Shop_Panel.SetActive(true);
     }
 }
