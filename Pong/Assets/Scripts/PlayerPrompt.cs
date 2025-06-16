@@ -4,7 +4,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 using Unity.VisualScripting;
-
+using UnityEngine.UI;
 
 public class PlayerPrompt : MonoBehaviour
 {
@@ -28,6 +28,8 @@ public class PlayerPrompt : MonoBehaviour
     static int Level = 1;
     static int score;
     public int Holder;
+
+    public Slider progressBar;
 
 
     public bool ShouldFollow;
@@ -72,16 +74,16 @@ public class PlayerPrompt : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {   
-
-        if(TimetoDisplay % 5 == 0 && textDelay && starting)
+    {
+        //Time.timeScale = 0.5f;
+        if (TimetoDisplay % 5 == 0 && textDelay && starting)
         {
             tutorial_text();
             Delay = 2;
             textDelay = false;
         }
 
-        if(Abilities.Count > 0) 
+        if (Abilities.Count > 0)
         {
             specialAbilities.text = "You've got " + Abilities.Count + " special abilities, press right button mouse to use.";
         }
@@ -167,37 +169,37 @@ public class PlayerPrompt : MonoBehaviour
         ScoreText.text = score.ToString();
         LevelText.text = Level.ToString();
 
-        if(score == 5 && incScore)
+        if (score == 5 && incScore)
         {
             Level = 2;
             incScore = false;
         }
-        else if(score == 10 && incScore)
+        else if (score == 10 && incScore)
         {
             Level = 3;
             incScore = false;
         }
-        else if(score == 15 && incScore)
+        else if (score == 15 && incScore)
         {
             Level = 4;
             incScore = false;
         }
-        else if(score != 5 && score != 10 && score != 15)
+        else if (score != 5 && score != 10 && score != 15)
         {
             incScore = true;
         }
 
-        if(Level == 1)
+        if (Level == 1)
         {
             Ball.Level_Speed = 5f;
             Ball.changeSpeed(0.5f);
         }
-        else if(Level == 2)
+        else if (Level == 2)
         {
             Ball.Level_Speed = 10f;
             Ball.changeSpeed(0.7f);
         }
-        else if(Level == 3)
+        else if (Level == 3)
         {
             Ball.Level_Speed = 15f;
             Ball.changeSpeed(0.9f);
@@ -210,7 +212,7 @@ public class PlayerPrompt : MonoBehaviour
         countdown = (int)Timer;
         TimetoDisplay = (int)Timer;
 
-        if(TimetoDisplay < 10)
+        if (TimetoDisplay < 10)
         {
             Time_text.text = "Time: " + "0" + TimetoDisplay.ToString();
 
@@ -224,10 +226,10 @@ public class PlayerPrompt : MonoBehaviour
         {
             if (starting)
             {
-                TimeToStart = 30;
+                TimeToStart = 30; //Make 30 for on screen text
                 starting = true;
             }
-            else if(!starting)
+            else if (!starting)
             {
                 TimeToStart = Holder;
             }
@@ -236,7 +238,7 @@ public class PlayerPrompt : MonoBehaviour
             Centre_text.text = TimeToStart.ToString();
 
         }
-        else if(TimeToStart == 0 && ShouldFollow)
+        else if (TimeToStart == 0 && ShouldFollow)
         {
             Centre_text.gameObject.SetActive(false);
             Ball.KickOff(dir);
@@ -253,12 +255,12 @@ public class PlayerPrompt : MonoBehaviour
             textDelay = true;
         }
 
- 
+
     }
 
     public void OutComeScreen(string who)
     {
-        if(who == "Player")
+        if (who == "Player")
         {
             Centre_text.gameObject.SetActive(true);
             Centre_text.text = "You lose!";
@@ -268,7 +270,7 @@ public class PlayerPrompt : MonoBehaviour
             You_lostText.text = "You lost.";
 
         }
-        else if(who == "Opponent")
+        else if (who == "Opponent")
         {
             score++;
             Centre_text.gameObject.SetActive(true);
@@ -285,7 +287,7 @@ public class PlayerPrompt : MonoBehaviour
     {
         if (who == "Player")
         {
-            if(score > 0)
+            if (score > 0)
             {
                 score--;
             }
@@ -316,19 +318,19 @@ public class PlayerPrompt : MonoBehaviour
         }
         else if (inc == 2)
         {
-            Tutorial_text.text = "Press H to hide the cursor and Escape to unhide it";
+            Tutorial_text.text = "Left and right movement achieved by moving the mouse left and right and backwards and forward is moving the mouse back and forth.";
         }
         else if (inc == 3)
         {
-            Tutorial_text.text = "Use the scroll wheel to move the racket further or closer to the screen.";
+            Tutorial_text.text = "Press H to hide the cursor and Escape to unhide it.";
         }
         else if (inc == 4)
         {
-            Tutorial_text.text = "If the ball moves past you, you lose.";
+            Tutorial_text.text = "If the ball moves past you, you lose. If it moves past your opponent, you win.";
         }
         else if (inc == 5)
         {
-            Tutorial_text.text = "If it moves past your opponent, you win.";
+            Tutorial_text.text = "The meter on the bottom left is you power shot meter, use it by holding the left mouse button and in determines the power with which you hit the ball. ";
         }
         else
         {

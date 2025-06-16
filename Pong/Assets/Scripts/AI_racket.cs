@@ -11,9 +11,9 @@ public class AI_racket : MonoBehaviour
 
     Ball_movement Ball;
 
-    public Vector3 position = Vector3.zero;
+    public Vector3 To_position = Vector3.zero;
 
-    public float reactionSpeed = 0.5f;
+    public float reactionSpeed = 10f;
 
     // Start is called before the first frame update
     void Start()
@@ -25,9 +25,9 @@ public class AI_racket : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(position != Vector3.zero)
+        if (To_position != Vector3.zero)
         {
-            MoveRacket(position);
+            MoveRacket(To_position);
 
         }
     }
@@ -36,9 +36,10 @@ public class AI_racket : MonoBehaviour
     {
         //Racket.position = Vector3.Lerp(transform.position, pos, 0.5f);
 
-        Vector3 ToStart = Vector3.MoveTowards(transform.position, pos, reactionSpeed);
+        Vector3 ToStart = Vector3.Lerp(transform.position, pos, 0.05f);
         Racket.MovePosition(ToStart);
-        position = pos;
+        To_position = pos;
+
 
     }
 

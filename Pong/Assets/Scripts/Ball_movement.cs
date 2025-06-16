@@ -22,6 +22,7 @@ public class Ball_movement : MonoBehaviour
     public Vector3 ToStart = Vector3.zero;
     public Vector3 Target = Vector3.zero;
     public Vector3 middle = new Vector3(0, 0, 0);
+    public Vector3 TheRacket;
 
     public AI_racket AI;
     public PlayerPrompt Prompt;
@@ -33,8 +34,14 @@ public class Ball_movement : MonoBehaviour
     public float sphereRadius = 0.5f;
     public float castDistance = 1.5f;
     public float Level_Speed = 1.0f;
+    public float value = 0f;
+    float targetValue = 50f;
+    float velocity = 0f;
+    float smoothTime = 1f;
 
     bool ShouldMove = true;
+    bool ShouldFill = true;
+    public bool shouldCalculate;
 
     //Line renderer
     private LineRenderer line;
@@ -60,19 +67,21 @@ public class Ball_movement : MonoBehaviour
         line.startColor = Color.red;
         line.endColor = Color.red;
 
-        if(Point_int > 0)
+        if (Point_int > 0)
         {
             Prompt.TimeToStart = (int)PlayerPrompt.Timer + 5;
             Prompt.Holder = (int)PlayerPrompt.Timer + 5;
             Prompt.starting = false;
-            
+
         }
         else
         {
-            Prompt.TimeToStart = 30;
+            Prompt.TimeToStart = 30; //Make 30 for on screen text
             Prompt.starting = true;
             PlayerPrompt.dir = "player";
         }
+
+        Prompt.progressBar.value = value;
 
 
 
@@ -83,9 +92,25 @@ public class Ball_movement : MonoBehaviour
     {
         ToStart = P_racket.position - Ball.position;
         Y_pos = 4;
+        if (Ball.linearVelocity.x > 0)
+        {
+            line.SetPosition(0, transform.position);
+            line.SetPosition(1, CalculatePointOnY(Y_pos));
+        }
+        else if (Ball.linearVelocity.x < 0)
+        {
+            line.SetPosition(0, transform.position);
+            line.SetPosition(1, CalculatePointOnY((int)TheRacket.y));
+        }
+
+        Prompt.progressBar.value = value;
+        if (Input.GetMouseButton(0) && ShouldFill)
+        {
+            value = Mathf.SmoothDamp(value, targetValue, ref velocity, smoothTime);
+        }
 
 
-        if (transform.position.x > 0)
+        if (transform.position.x > 4 && ShouldMove)
         {
             Vector3 point = CalculatePointOnY(Y_pos);
 
@@ -106,15 +131,23 @@ public class Ball_movement : MonoBehaviour
                 }
             }
 
-            Vector3 pos = CalculatePointOnY(Y_pos) - transform.position;
-            line.SetPosition(0, transform.position);
-            line.SetPosition(1, CalculatePointOnY(Y_pos));
 
-            if (transform.position.x > 5 && CalculatePointOnY(Y_pos) != Vector3.positiveInfinity && ShouldMove)
+            //Vector3 pos = CalculatePointOnY(Y_pos) - transform.position;
+            //line.SetPosition(0, transform.position);
+            //line.SetPosition(1, CalculatePointOnY(Y_pos));
+
+            if (transform.position.x > 5 && ShouldMove)
             {
-                AI.MoveRacket(CalculatePointOnY(Y_pos));
-                ShouldMove = false;
+                Vector3 predictedPosition = CalculatePointOnY(Y_pos);
+
+                if (predictedPosition != Vector3.positiveInfinity && IsValidVector3(predictedPosition))
+                {
+                    AI.MoveRacket(predictedPosition);
+                    ShouldMove = false;
+                }
             }
+
+
         }
 
 
@@ -125,13 +158,13 @@ public class Ball_movement : MonoBehaviour
             Prompt.scoreKeeper("Player");
 
         }
-        else if(transform.position.x > AI_racket_rb.transform.position.x + 5)
+        else if (transform.position.x > AI_racket_rb.transform.position.x + 5)
         {
             Prompt.scoreKeeper("Opponent");
             //Ball.MovePosition(middle);
         }
 
-        Vector3 direction = Ball.velocity.normalized;
+        Vector3 direction = Ball.linearVelocity.normalized;
         if (Physics.SphereCast(transform.position, sphereRadius, direction, out RaycastHit hit, castDistance))
         {
             if (hit.transform.tag == "racket_P")
@@ -139,22 +172,30 @@ public class Ball_movement : MonoBehaviour
                 Point_int++;
                 Prompt.ShouldFollow = false;
                 Prompt.ShouldFollow2 = false;
-                Target = new Vector3(0, 4, 0) - p_racket.transform.position;
-                Target.y = 5;
-                Ball.velocity = Target.normalized * (ballSpeed + Level_Speed);
+                Target = AI_racket_rb.transform.position;
+                Target.y = Random.Range(3f, 6f);
+                Target.z = Random.Range(-7f, 7f);
+                Ball.linearVelocity = CalculateLaunchVelocity(p_racket.transform.position, Target, 40f + value, Physics.gravity.y);
                 ShouldMove = true;
                 Sound.clip = SoundClip;
                 Sound.Play();
+                value = 0;
+                ShouldFill = false;
             }
             else if (hit.transform.tag == "racket_AI")
             {
                 Prompt.ShouldFollow = false;
                 Prompt.ShouldFollow2 = false;
-                Target = new Vector3(0, 4, 0) - AI_racket_rb.transform.position;
+                Target = p_racket.transform.position;
                 Target.y = 5;
-                Ball.velocity = Target.normalized * (70f + Level_Speed);
+                Target.z = Random.Range(-5f, 5f);
+                Target.x = Random.Range(-46f, -35f);
+                Ball.linearVelocity = CalculateLaunchVelocity(AI_racket_rb.transform.position, Target, 50f, Physics.gravity.y);
                 Sound.clip = SoundClip;
                 Sound.Play();
+                shouldCalculate = true;
+                ShouldFill = true;
+
             }
         }
 
@@ -174,31 +215,32 @@ public class Ball_movement : MonoBehaviour
 
         if (dir == "player")
         {
-            ToStart = P_racket.position - transform.position;
-            Ball.velocity = ToStart.normalized;
+            ToStart = P_racket.transform.position - transform.position;
+            Ball.linearVelocity = ToStart.normalized;
             ToStart = Vector3.Lerp(transform.position, P_racket.position, 0.1f);
             Ball.MovePosition(ToStart);
         }
         else
         {
+            ShouldMove = false;
             ToStart = AI_racket_rb.transform.position - transform.position;
-            Ball.velocity = ToStart.normalized;
+            Ball.linearVelocity = ToStart.normalized;
             ToStart = Vector3.Lerp(transform.position, AI_racket_rb.transform.position, 0.1f);
             Ball.MovePosition(ToStart);
         }
 
-        
+
     }
 
-    
+
     public Vector3 CalculatePointOnX()
     {
 
         Vector3 reaction_plane = Vector3.zero;
         reaction_plane.x = 40;
 
-        reaction_plane.y = transform.position.y + Ball.velocity.y / Ball.velocity.x * (reaction_plane.x - transform.position.x);
-        reaction_plane.z = transform.position.z + Ball.velocity.z / Ball.velocity.x * (reaction_plane.x - transform.position.x);
+        reaction_plane.y = transform.position.y + Ball.linearVelocity.y / Ball.linearVelocity.x * (reaction_plane.x - transform.position.x);
+        reaction_plane.z = transform.position.z + Ball.linearVelocity.z / Ball.linearVelocity.x * (reaction_plane.x - transform.position.x);
 
         return reaction_plane;
     }
@@ -208,7 +250,7 @@ public class Ball_movement : MonoBehaviour
         float t = 0;
         float g = Physics.gravity.y;
         float Yin = transform.position.y;
-        float Vin = Ball.velocity.y;
+        float Vin = Ball.linearVelocity.y;
 
         Vector3 reaction_plane = Vector3.zero;
         reaction_plane.y = Y_pos;
@@ -217,7 +259,7 @@ public class Ball_movement : MonoBehaviour
         float b = Vin;
         float c = Yin - reaction_plane.y;
 
-        float discriminant =b * b - 4 * a * c;
+        float discriminant = b * b - 4 * a * c;
 
         if (discriminant < 0)
         {
@@ -233,28 +275,47 @@ public class Ball_movement : MonoBehaviour
         if (t < 0) return Vector3.positiveInfinity;
 
         Vector3 gravityVec = new Vector3(0, g, 0);
-        Vector3 predictedPosition = transform.position + Ball.velocity * t + 0.5f * gravityVec * t * t;
+        Vector3 predictedPosition = transform.position + Ball.linearVelocity * t + 0.5f * gravityVec * t * t;
 
         return predictedPosition;
     }
 
+    public static Vector3 CalculateLaunchVelocity(Vector3 startPos, Vector3 targetPos, float horizontalSpeed, float gravity)
+    {
+        // Get horizontal displacement (XZ plane)
+        Vector3 horizontalDisplacement = new Vector3(targetPos.x - startPos.x, 0f, targetPos.z - startPos.z);
+        float horizontalDistance = horizontalDisplacement.magnitude;
+
+        // Calculate time to reach target horizontally
+        float time = horizontalDistance / horizontalSpeed;
+
+        // Calculate required vertical velocity using kinematic formula
+        float verticalDisplacement = targetPos.y - startPos.y;
+        float verticalVelocity = (verticalDisplacement - 0.5f * gravity * time * time) / time;
+
+        // Compose full launch velocity vector
+        Vector3 launchVelocity = horizontalDisplacement.normalized * horizontalSpeed + Vector3.up * verticalVelocity;
+
+        return launchVelocity;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
-    
+
         Sound.clip = SoundClip;
         Sound.Play();
 
     }
 
     public void reflect()
-    { 
-        if(transform.position.x < p_racket.transform.position.x)
+    {
+        if (transform.position.x < p_racket.transform.position.x)
         {
             Point_int++;
             Prompt.ShouldFollow = false;
             Target = new Vector3(0, 4, 0) - transform.position;
             Target.y = 5;
-            Ball.velocity = Target.normalized * ballSpeed;
+            Ball.linearVelocity = Target.normalized * ballSpeed;
             ShouldMove = true;
             Sound.clip = SoundClip;
             Sound.Play();
@@ -271,5 +332,11 @@ public class Ball_movement : MonoBehaviour
     {
         AI.reactionSpeed = speed;
     }
+
+    bool IsValidVector3(Vector3 v)
+    {
+        return !(float.IsNaN(v.x) || float.IsNaN(v.y) || float.IsNaN(v.z));
+    }
+
 
 }
